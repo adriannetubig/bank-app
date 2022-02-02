@@ -7,6 +7,7 @@ import { AppThunkAction } from './';
 export interface CustomersState {
     isLoading: boolean;
     customers: Customer[];
+    requestStarted: boolean;
 }
 
 export interface Customer {
@@ -39,7 +40,8 @@ export const actionCreators = {
     requestCustomers: (): AppThunkAction<KnownAction> => (dispatch, getState) => {
         // Only load data if it's something we don't already have (and are not already loading)
         const appState = getState();
-        if (appState && appState.customers) {
+        if (appState && appState.customers && !appState.customers.requestStarted) {
+            appState.customers.requestStarted = true;
             fetch(`https://localhost:7293/customers`)
                 .then(response => response.json() as Promise<Customer[]>)
                 .then(data => {
@@ -54,7 +56,7 @@ export const actionCreators = {
 // ----------------
 // REDUCER - For a given state and action, returns the new state. To support time travel, this must not mutate the old state.
 
-const unloadedState: CustomersState = { customers: [], isLoading: false };
+const unloadedState: CustomersState = { customers: [], isLoading: false, requestStarted: false };
 
 export const reducer: Reducer<CustomersState> = (state: CustomersState | undefined, incomingAction: Action): CustomersState => {
     if (state === undefined) {
@@ -66,14 +68,16 @@ export const reducer: Reducer<CustomersState> = (state: CustomersState | undefin
         case 'REQUEST_CUSTOMERS':
             return {
                 customers: state.customers,
-                isLoading: true
+                isLoading: true,
+                requestStarted: true
             };
         case 'RECEIVE_CUSTOMERS':
             // Only accept the incoming data if it matches the most recent request. This ensures we correctly
             // handle out-of-order responses.
             return {
                 customers: action.customers,
-                isLoading: false
+                isLoading: false,
+                requestStarted: true
             };
     }
 
