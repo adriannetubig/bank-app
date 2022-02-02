@@ -1,5 +1,6 @@
 import { Action, Reducer } from 'redux';
 import { AppThunkAction } from './';
+import { Customer } from '../store/Customers'
 
 // -----------------
 // STATE - This defines the type of data maintained in the Redux store.
@@ -7,6 +8,7 @@ import { AppThunkAction } from './';
 export interface TransactionsState {
     isLoading: boolean;
     transactions: Transaction[];
+    requestStarted: boolean;
 }
 
 export interface Transaction {
@@ -16,6 +18,7 @@ export interface Transaction {
     description: number;
     amount: number;
     date: number;
+    owner: Customer
 }
 
 // -----------------
@@ -43,7 +46,8 @@ export const actionCreators = {
     requestTransactions: (): AppThunkAction<KnownAction> => (dispatch, getState) => {
         // Only load data if it's something we don't already have (and are not already loading)
         const appState = getState();
-        if (appState && appState.transactions) {
+        if (appState && appState.transactions && !appState.transactions.requestStarted) {
+            appState.transactions.requestStarted = true;
             fetch(`https://localhost:7293/transactions`)
                 .then(response => response.json() as Promise<Transaction[]>)
                 .then(data => {
@@ -58,7 +62,7 @@ export const actionCreators = {
 // ----------------
 // REDUCER - For a given state and action, returns the new state. To support time travel, this must not mutate the old state.
 
-const unloadedState: TransactionsState = { transactions: [], isLoading: false };
+const unloadedState: TransactionsState = { transactions: [], isLoading: false, requestStarted: false };
 
 export const reducer: Reducer<TransactionsState> = (state: TransactionsState | undefined, incomingAction: Action): TransactionsState => {
     if (state === undefined) {
@@ -70,15 +74,20 @@ export const reducer: Reducer<TransactionsState> = (state: TransactionsState | u
         case 'REQUEST_TRANSACTIONS':
             return {
                 transactions: state.transactions,
-                isLoading: true
+                isLoading: true,
+                requestStarted: true
             };
         case 'RECEIVE_TRANSACTIONS':
             // Only accept the incoming data if it matches the most recent request. This ensures we correctly
             // handle out-of-order responses.
-            return {
-                transactions: action.transactions,
-                isLoading: false
-            };
+            if (state.isLoading === true) {
+                return {
+                    transactions: action.transactions,
+                    isLoading: false,
+                    requestStarted: true
+                };
+            }
+            break;
     }
 
     return state;

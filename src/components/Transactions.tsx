@@ -46,17 +46,21 @@ class FetchData extends React.PureComponent<TransactionProps> {
             <th>description</th>
             <th>amount</th>
             <th>date</th>
+            <th>ownerId</th>
+            <th>ownerName</th>
           </tr>
         </thead>
         <tbody>
-          {this.props.transactions.map((forecast: TransactionsStore.Transaction) =>
-            <tr key={forecast.date}>
-              <td>{forecast.id}</td>
-              <td>{forecast.fromAccount}</td>
-              <td>{forecast.toAccount}</td>
-              <td>{forecast.description}</td>
-              <td>{forecast.amount}</td>
-              <td>{forecast.date}</td>
+          {this.props.transactions.map((transaction: TransactionsStore.Transaction) =>
+            <tr key={transaction.id}>
+              <td>{transaction.id}</td>
+              <td>{transaction.fromAccount}</td>
+              <td>{transaction.toAccount}</td>
+              <td>{transaction.description}</td>
+              <td>{transaction.amount}</td>
+              <td>{transaction.date}</td>
+              <td>{transaction.owner.id}</td>
+              <td>{transaction.owner.name}</td>
             </tr>
           )}
         </tbody>
